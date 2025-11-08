@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Event Countdown Timer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <header>
+                <h1><i class="fas fa-clock"></i> Event Countdown</h1>
+                <button class="theme-toggle" id="theme-toggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </header>
+            
+            <div class="event-info">
+                <h2 id="event-title">New Year Celebration</h2>
+                <p id="event-date">January 1, 2026 00:00:00</p>
+            </div>
+            
+            <div class="countdown-container" id="countdown">
+                <div class="countdown-box">
+                    <div class="countdown-value" id="days">00</div>
+                    <div class="countdown-label">Days</div>
+                </div>
+                <div class="countdown-box">
+                    <div class="countdown-value" id="hours">00</div>
+                    <div class="countdown-label">Hours</div>
+                </div>
+                <div class="countdown-box">
+                    <div class="countdown-value" id="minutes">00</div>
+                    <div class="countdown-label">Minutes</div>
+                </div>
+                <div class="countdown-box">
+                    <div class="countdown-value" id="seconds">00</div>
+                    <div class="countdown-label">Seconds</div>
+                </div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            
+            <div class="event-message" id="event-message">
+                <i class="fas fa-party-horn"></i>
+                <div>🎉 The event has started!</div>
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-primary" id="edit-btn">
+                    <i class="fas fa-edit"></i> Edit Event
+                </button>
+                <button class="btn btn-secondary" id="reset-btn">
+                    <i class="fas fa-redo"></i> Reset Timer
+                </button>
+            </div>
+            
+            <div class="form-container" id="form-container">
+                <div class="form-group">
+                    <label for="event-name">Event Name</label>
+                    <input type="text" id="event-name" placeholder="Enter event name">
+                </div>
+                <div class="form-group">
+                    <label for="event-date-input">Event Date & Time</label>
+                    <input type="datetime-local" id="event-date-input">
+                </div>
+                <button class="btn btn-primary" id="save-btn" style="width: 100%;">
+                    <i class="fas fa-save"></i> Save Event
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const daysEl = document.getElementById('days');
+        const hoursEl = document.getElementById('hours');
+        const minutesEl = document.getElementById('minutes');
+        const secondsEl = document.getElementById('seconds');
+        const eventTitle = document.getElementById('event-title');
+        const eventDate = document.getElementById('event-date');
+        const editBtn = document.getElementById('edit-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const formContainer = document.getElementById('form-container');
+        const eventNameInput = document.getElementById('event-name');
+        const eventDateInput = document.getElementById('event-date-input');
+        const saveBtn = document.getElementById('save-btn');
+        const eventMessage = document.getElementById('event-message');
+        const progressBar = document.getElementById('progress-bar');
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+
+        // Initialize with a default event
+        let eventDateValue = new Date('January 1, 2026 00:00:00').getTime();
+        let eventTitleValue = 'New Year Celebration';
+        
+        // Load saved event from localStorage if available
+        if (localStorage.getItem('eventDate')) {
+            eventDateValue = parseInt(localStorage.getItem('eventDate'));
+            eventTitleValue = localStorage.getItem('eventTitle');
+            updateEventDisplay();
+        }
+
+        // Theme toggle functionality
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const icon = themeToggle.querySelector('i');
+            if (body.classList.contains('dark-mode')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        });
+
+        // Edit button functionality
+        editBtn.addEventListener('click', () => {
+            formContainer.style.display = 'block';
+            eventNameInput.value = eventTitleValue;
+            eventDateInput.value = new Date(eventDateValue).toISOString().slice(0, 16);
+            formContainer.classList.add('fade-in');
+        });
+
+        // Save button functionality
+        saveBtn.addEventListener('click', () => {
+            const newEventName = eventNameInput.value.trim();
+            const newEventDate = new Date(eventDateInput.value).getTime();
+            
+            if (newEventName && !isNaN(newEventDate)) {
+                eventTitleValue = newEventName;
+                eventDateValue = newEventDate;
+                
+                // Save to localStorage
+                localStorage.setItem('eventTitle', eventTitleValue);
+                localStorage.setItem('eventDate', eventDateValue);
+                
+                updateEventDisplay();
+                formContainer.style.display = 'none';
+                
+                // Reset the timer if it was finished
+                eventMessage.style.display = 'none';
+                countdownInterval = setInterval(updateCountdown, 1000);
+            } else {
+                alert('Please enter a valid event name and date/time');
+            }
+        });
+
+        // Reset button functionality
+        resetBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset the countdown?')) {
+                localStorage.removeItem('eventTitle');
+                localStorage.removeItem('eventDate');
+                
+                // Reset to default event
+                eventDateValue = new Date('January 1, 2026 00:00:00').getTime();
+                eventTitleValue = 'New Year Celebration';
+                
+                updateEventDisplay();
+                formContainer.style.display = 'none';
+                
+                // Reset the timer if it was finished
+                eventMessage.style.display = 'none';
+                countdownInterval = setInterval(updateCountdown, 1000);
+            }
+        });
+
+        // Update event display
+        function updateEventDisplay() {
+            eventTitle.textContent = eventTitleValue;
+            eventDate.textContent = new Date(eventDateValue).toLocaleString();
+        }
+
+        // Update countdown function
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = eventDateValue - now;
+            
+            if (distance <= 0) {
+                clearInterval(countdownInterval);
+                eventMessage.style.display = 'block';
+                eventMessage.classList.add('pulse');
+                daysEl.textContent = '00';
+                hoursEl.textContent = '00';
+                minutesEl.textContent = '00';
+                secondsEl.textContent = '00';
+                progressBar.style.width = '100%';
+                return;
+            }
+            
+            // Calculate time units
+            const day = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hour = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minute = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const second = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            // Update display
+            daysEl.textContent = formatTime(day);
+            hoursEl.textContent = formatTime(hour);
+            minutesEl.textContent = formatTime(minute);
+            secondsEl.textContent = formatTime(second);
+            
+            // Update progress bar
+            const totalTime = eventDateValue - new Date('January 1, 2025').getTime(); // Approximate total time
+            const elapsed = now - new Date('January 1, 2025').getTime();
+            const progressPercent = Math.min(100, (elapsed / totalTime) * 100);
+            progressBar.style.width = `${progressPercent}%`;
+        }
+
+        // Format time to always show 2 digits
+        function formatTime(time) {
+            return time < 10 ? `0${time}` : time;
+        }
+
+        // Initialize the countdown
+        let countdownInterval = setInterval(updateCountdown, 1000);
+        updateCountdown(); // Initial call to show values immediately
+    </script>
+</body>
+</html>
